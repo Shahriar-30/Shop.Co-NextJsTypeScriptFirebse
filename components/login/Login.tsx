@@ -49,7 +49,7 @@ const page = () => {
             id: firebaseUser.uid,
             name: firebaseUser.displayName,
             email: firebaseUser.email,
-            role: "user",
+            role: "admin",
             photoUrl: firebaseUser.photoURL,
             createdAt: serverTimestamp(),
           };
