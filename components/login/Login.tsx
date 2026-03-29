@@ -14,7 +14,7 @@ import { signInWithPopup } from "firebase/auth";
 import ProfileBtn from "../profile/ProfileBtn";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
-const page = () => {
+const Login = () => {
   // Use selectors to ensure reactivity when state changes
   const userInfo = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
@@ -184,4 +184,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Login;
