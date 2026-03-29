@@ -21,6 +21,8 @@ interface Product {
   name: string;
   price: number;
   image: string;
+  description?: string;
+  category?: string;
   [key: string]: any;
 }
 
@@ -158,14 +160,14 @@ const Page = () => {
         </DialogContent>
       </Dialog>
 
-      <div className="h-screen w-full md:px-13">
+      <div className="min-h-screen w-full md:px-13 pb-12">
         {loading ? (
           <div className="flex items-center justify-center w-full h-screen">
             <p className="font-mono text-3xl font-bold">Loading...</p>
           </div>
         ) : product ? (
-          <div className="flex flex-col md:flex-row justify-between items-center w-full mt-12">
-            <div className="relative w-[300px] h-[300px]">
+          <div className="flex flex-col md:flex-row justify-center items-start gap-12 w-full mt-12">
+            <div className="relative w-full max-w-[450px] aspect-square rounded-xl overflow-hidden shadow-lg border">
               <Image
                 src={product.image}
                 alt={product.name}
@@ -173,11 +175,32 @@ const Page = () => {
                 className="object-cover"
               />
             </div>
-            <div className="md:space-y-6 space-y-2.5 mt-6 md:mt-8">
-              <h2 className="text-2xl font-bold md:text-4xl">{product.name}</h2>
-              <p className="text-xl font-semibold md:text-2xl">
-                ${product.price}
+            <div className="md:space-y-6 space-y-4 flex-1 max-w-xl">
+              <div>
+                {product.category && (
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full mb-2 uppercase tracking-wider">
+                    {product.category}
+                  </span>
+                )}
+                <h2 className="text-3xl font-bold md:text-5xl">
+                  {product.name}
+                </h2>
+              </div>
+
+              <p className="text-2xl font-bold text-blue-600 md:text-3xl">
+                ${product.price.toFixed(2)}
               </p>
+
+              <div className="border-t border-b py-6 space-y-2">
+                <h3 className="font-bold text-lg uppercase text-gray-500">
+                  Description
+                </h3>
+                <p className="text-gray-700 leading-relaxed">
+                  {product.description ||
+                    "No description provided for this item."}
+                </p>
+              </div>
+
               {/* Quantity selector */}
               <div className="flex items-center space-x-4">
                 <button

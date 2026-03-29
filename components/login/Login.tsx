@@ -12,12 +12,13 @@ import { auth, db, googleProvider } from "@/lib/firebase";
 import { useUserStore } from "@/store/UserStore";
 import { signInWithPopup } from "firebase/auth";
 import ProfileBtn from "../profile/ProfileBtn";
-import { collection, addDoc, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 const page = () => {
-  // subscribe to user so component updates automatically on login/logout
+  // Use selectors to ensure reactivity when state changes
   const userInfo = useUserStore((state) => state.user);
-  const { setUser } = useUserStore();
+  const setUser = useUserStore((state) => state.setUser);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorDialog, setErrorDialog] = useState({
     open: false,
@@ -29,51 +30,45 @@ const page = () => {
     setErrorDialog({ open: true, title, message });
   };
 
-  const handelGoogle = async () => {
+  const handleGoogle = async () => {
     setIsLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
 
-      // Check if user already exists in Firestore
       try {
-        const userQuery = query(
-          collection(db, "users"),
-          where("id", "==", result.user.uid),
-        );
-        const querySnapshot = await getDocs(userQuery);
+        // Use UID as the document ID - this is much more efficient than querying
+        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-        // Only save to Firestore if user doesn't exist
-        if (querySnapshot.empty) {
-          await addDoc(collection(db, "users"), {
-            id: result.user.uid,
-            name: result.user.displayName,
-            email: result.user.email,
+        let finalUserData;
+
+        if (!userDocSnap.exists()) {
+          // Only save to Firestore if user doesn't exist
+          finalUserData = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName,
+            email: firebaseUser.email,
             role: "user",
-            photoUrl: result.user.photoURL,
-            createdAt: new Date(),
-          });
+            photoUrl: firebaseUser.photoURL,
+            createdAt: serverTimestamp(),
+          };
+          await setDoc(userDocRef, finalUserData);
           console.log("New user added to Firestore");
-          // Update local zustand store for new user
-          setUser({
-            id: result.user.uid,
-            name: result.user.displayName,
-            email: result.user.email,
-            role: "user",
-            photoUrl: result.user.photoURL,
-          });
         } else {
-          // User exists, fetch data from Firestore and save to zustand
-          const userDoc = querySnapshot.docs[0].data();
+          // User exists, load existing data
+          finalUserData = userDocSnap.data();
           console.log("User already exists in Firestore, loading data");
-          setUser({
-            id: userDoc.id,
-            name: userDoc.name,
-            email: userDoc.email,
-            role: userDoc.role,
-            photoUrl: userDoc.photoUrl,
-          });
         }
-        setIsLoading(false);
+
+        // Update local zustand store to trigger UI change
+        setUser({
+          id: finalUserData.id || firebaseUser.uid,
+          name: finalUserData.name,
+          email: finalUserData.email,
+          role: finalUserData.role || "user",
+          photoUrl: finalUserData.photoUrl,
+        });
       } catch (firestoreError) {
         console.error(
           "Error checking/adding user to Firestore: ",
@@ -83,11 +78,8 @@ const page = () => {
           "Database Error",
           "Failed to save user data. Please try again.",
         );
-        setIsLoading(false);
       }
     } catch (error) {
-      setIsLoading(false);
-
       if (error instanceof Error) {
         if (error.message.includes("popup-closed-by-user")) {
           console.log("User cancelled the login");
@@ -123,6 +115,8 @@ const page = () => {
         "Sign In Failed",
         "Unable to sign in with Google. Please try again or contact support if the problem persists.",
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -154,7 +148,7 @@ const page = () => {
         <Button
           className="w-full cursor-pointer"
           variant={"outline"}
-          onClick={handelGoogle}
+          onClick={handleGoogle}
           disabled={isLoading}
         >
           <svg

@@ -22,13 +22,20 @@ const CreateProduct = () => {
   let [productData, setProductData] = useState({
     name: "",
     price: "",
+    description: "",
+    category: "",
   });
   const [image, setImage] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCreateProduct = async () => {
-    if (!productData.name || !productData.price) {
+    if (
+      !productData.name ||
+      !productData.price ||
+      !productData.description ||
+      !productData.category
+    ) {
       setFormError(true);
       return;
     }
@@ -76,12 +83,14 @@ const CreateProduct = () => {
         userId: userInfo?.id,
         name: productData.name,
         price: parseFloat(productData.price),
+        description: productData.description,
+        category: productData.category,
         image: imageUrl, // 👈 saved here
         createdAt: new Date(),
       });
 
       // 3️⃣ Reset state
-      setProductData({ name: "", price: "" });
+      setProductData({ name: "", price: "", description: "", category: "" });
       setImage(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -139,6 +148,34 @@ const CreateProduct = () => {
                   setFormError(false);
                 }}
               />
+
+              <textarea
+                placeholder="Product Description"
+                className={`w-full rounded p-2 mb-2 focus:outline-none border border-black min-h-[100px] ${formError && !productData.description ? "border-red-500" : ""}`}
+                value={productData.description}
+                onChange={(e) => {
+                  setProductData({
+                    ...productData,
+                    description: e.target.value,
+                  });
+                  setFormError(false);
+                }}
+              />
+
+              <input
+                type="text"
+                placeholder="Product Category"
+                className={`w-full rounded p-2 mb-2 focus:outline-none border border-black ${formError && !productData.category ? "border-red-500" : ""}`}
+                value={productData.category}
+                onChange={(e) => {
+                  setProductData({
+                    ...productData,
+                    category: e.target.value,
+                  });
+                  setFormError(false);
+                }}
+              />
+
               <Button
                 variant={"default"}
                 className="w-full bg-blue-800 text-white mt-2 disabled:opacity-50"
